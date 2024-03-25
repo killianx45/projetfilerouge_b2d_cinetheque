@@ -53,7 +53,6 @@ const getMovieDetails = async (title, originalTitle) => {
     );
     if (response.data.results && response.data.results.length > 0) {
       const movieId = response.data.results[0].id;
-      // Récupérer les détails du film à partir de son ID
       const movieDetailsResponse = await axios.get(
         `https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY_TMDB}&append_to_response=videos`
       );
@@ -61,7 +60,6 @@ const getMovieDetails = async (title, originalTitle) => {
         const trailer = movieDetailsResponse.data.videos.results.find(
           (video) => video.type === "Trailer" && video.site === "YouTube"
         );
-        // Récupérer la valeur de vote_average
         const voteAverage = movieDetailsResponse.data.vote_average;
         if (trailer) {
           return {
@@ -105,8 +103,6 @@ const syncData = async () => {
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const excelData = xlsx.utils.sheet_to_json(sheet, { header: 1 });
-
-    // Nettoie la base de données en supprimant tous les documents existants
     await Film.deleteMany({ _id: { $exists: true, $ne: null } });
 
     for (const excelRow of excelData.slice(1)) {
@@ -120,15 +116,14 @@ const syncData = async () => {
       const trailerPath = trailerVoteData ? trailerVoteData.trailerKey : null;
       const voteAverage = trailerVoteData ? trailerVoteData.voteAverage : null;
 
-      let filmGenres = excelRow[7]; // Récupération des genres à partir de la feuille Excel
+      let filmGenres = excelRow[7];
       if (!filmGenres) {
-        // Si le genre est undefined, récupérer les genres depuis l'API TMDB
         const response = await axios.get(
           `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY_TMDB}&query=${excelRow[1]}`
         );
         if (response.data.results && response.data.results.length > 0) {
           const genreIds = response.data.results[0].genre_ids;
-          filmGenres = genreIds.map((id) => genresMap[id]).join(", "); // Utilisation de la map pour traduire les IDs en noms de genres
+          filmGenres = genreIds.map((id) => genresMap[id]).join(", ");
         }
       }
 
@@ -140,22 +135,19 @@ const syncData = async () => {
         annee_de_production,
         nationalite: excelRow[5],
         duree: excelRow[6],
-        genre: filmGenres, // Utilisation des genres récupérés
+        genre: filmGenres,
         synopsis: excelRow.slice(8).join("\t"),
         posterPath,
         trailerPath,
-        votePath: voteAverage, // Ajout de vote_average à votePath
+        votePath: voteAverage,
       };
 
-      // Vérifie s'il existe déjà un film avec le même ID
       const existingFilm = await Film.findOne({ _id: filmId });
 
       if (existingFilm) {
-        // Met à jour le film existant dans la base
         await Film.updateOne({ _id: filmId }, { $set: filmData });
         console.log("Film mis à jour dans la base de données:", filmData);
       } else {
-        // Ajoute le film à la base s'il n'existe pas encore
         await Film.create(filmData);
         console.log("Nouveau film ajouté à la base de données:", filmData);
       }
@@ -169,5 +161,4 @@ const syncData = async () => {
   }
 };
 
-// Appelle la fonction de synchronisation au début du script
 syncData();

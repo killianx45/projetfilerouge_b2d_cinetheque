@@ -16,6 +16,54 @@ function Home() {
   const [searchResults, setSearchResults] = useState([]);
   const [showInput, setShowInput] = useState(false);
 
+  const [ratings, setRatings] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [selectedRating, setSelectedRating] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [filteredFilms, setFilteredFilms] = useState([]);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:3000/api/films/meta")
+      .then((response) => {
+        const { ratings, genres } = response.data;
+        setRatings(ratings);
+        setGenres(genres);
+      })
+      .catch((error) => {
+        console.error(
+          "Erreur lors de la récupération des métadonnées des films :",
+          error
+        );
+      });
+  }, []);
+
+  const handleRatingChange = (event) => {
+    setSelectedRating(event.target.value);
+  };
+
+  const handleGenreChange = (event) => {
+    setSelectedGenre(event.target.value);
+  };
+
+  useEffect(() => {
+    let filteredFilms = films;
+
+    if (selectedRating) {
+      filteredFilms = filteredFilms.filter(
+        (film) => film.rating === selectedRating
+      );
+    }
+
+    if (selectedGenre) {
+      filteredFilms = filteredFilms.filter(
+        (film) => film.genre === selectedGenre
+      );
+    }
+
+    setFilteredFilms(filteredFilms);
+  }, [films, selectedRating, selectedGenre]);
+
   const handleImageClick = () => {
     setShowInput(true);
   };
@@ -25,10 +73,29 @@ function Home() {
       axios
         .get(`http://localhost:3000/api/films/search?title=${searchTerm}`)
         .then((response) => {
-          setSearchResults(response.data);
+          if (response.data.length > 0) {
+            setSearchResults(response.data);
+          } else {
+            axios
+              .get(
+                `http://localhost:3000/api/films/search?realisateurs=${searchTerm}`
+              )
+              .then((response) => {
+                setSearchResults(response.data);
+              })
+              .catch((error) => {
+                console.error(
+                  "Erreur lors de la recherche des films par réalisateur :",
+                  error
+                );
+              });
+          }
         })
         .catch((error) => {
-          console.error("Erreur lors de la recherche des films :", error);
+          console.error(
+            "Erreur lors de la recherche des films par titre :",
+            error
+          );
         });
     } else {
       setSearchResults([]);
@@ -105,7 +172,7 @@ function Home() {
           filmTitle
         )}`
       );
-      
+
       if (response && response.data && response.data.length > 0) {
         const filmId = response.data[0].id;
         const cineserieUrl = `https://www.cineserie.com/movies/${filmId}/`;
@@ -208,7 +275,7 @@ function Home() {
 
   return (
     <div className={`bg-slate-900 ${modalOpen ? "overflow-hidden" : ""}`}>
-      <div className="flex items-center justify-center p-5">
+      <div className="flex items-center justify-end p-5">
         <img
           src="src/images/loginuser1.webp"
           alt="logo"
@@ -229,18 +296,42 @@ function Home() {
             value={searchTerm}
             onChange={handleSearchInputChange}
             placeholder="Rechercher un film..."
-            className="items-center w-full p-3 text-black bg-white rounded h-1/6"
+            className="items-center w-1/5 p-3 text-black bg-white rounded h-1/6"
           />
         )}
+        <select value={selectedRating} onChange={handleRatingChange}>
+          <option value="">Toutes les notes</option>
+          {ratings.map((rating) => (
+            <option key={rating} value={rating}>
+              {rating}
+            </option>
+          ))}
+        </select>
+        <select value={selectedGenre} onChange={handleGenreChange}>
+          <option value="">Tous les genres</option>
+          {genres.map((genre) => (
+            <option key={genre} value={genre}>
+              {genre}
+            </option>
+          ))}
+        </select>
       </div>
-      <h1 className="mt-2 mb-16 font-extrabold text-center text-white uppercase">
+      <h1 className="mt-2 mb-16 font-extrabold text-center text-white uppercase md:text-4xl">
         La Cinémathèque Française
       </h1>
+      <div className="w-full h-full bg-slate-900">
+        {" "}
+        {searchTerm.length >= 3 && searchResults.length === 0 && (
+          <p className="text-center text-white">
+            Désolé, aucun titre disponible
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-wrap justify-center w-full gap-5 mt-5 align-center">
-        {currentFilms.map((film) => (
+        {filteredFilms.map((film) => (
           <div
-            className="w-1/3 h-full p-1 text-center rounded"
+            className="w-1/3 h-full p-1 text-center rounded md:w-1/4 lg:w-1/5 xl:w-1/6"
             key={film._id}
             onClick={() => openFilmModal(film._id)}
           >

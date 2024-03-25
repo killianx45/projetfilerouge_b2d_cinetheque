@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+require("dotenv").config();
 
 const filmSchema = new mongoose.Schema({
   _id: { type: mongoose.Schema.Types.Mixed, required: true },
@@ -13,10 +14,8 @@ const filmSchema = new mongoose.Schema({
   trailerPath: String,
   votePath: Number,
 });
-
-const FilmConnection = mongoose.createConnection(
-  "mongodb://localhost:27017/films"
-);
+const FILM_CONNECTION = process.env.FILM_CONNECTION;
+const FilmConnection = mongoose.createConnection(FILM_CONNECTION);
 const FilmModel = FilmConnection.model("Film", filmSchema);
 
 module.exports = FilmModel;

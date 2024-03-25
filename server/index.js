@@ -6,7 +6,6 @@ const User = require("./models/user.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const FilmModel = require("./models/Film");
-const axios = require("axios");
 require("dotenv").config();
 
 app.use(cors());
@@ -18,14 +17,33 @@ const PORT = process.env.PORT;
 
 mongoose.connect(MONGO_URI);
 
-// Ajoutez cette route après vos autres routes GET
-app.get("/api/films/search", async (req, res) => {
-  const { title } = req.query;
+app.get("/api/films/meta", async (req, res) => {
   try {
-    // Recherchez les films qui contiennent le titre fourni dans leur titre
-    const films = await FilmModel.find({
-      titre: { $regex: title, $options: "i" },
+    const ratings = await FilmModel.distinct("rating");
+
+    const genres = await FilmModel.distinct("genre");
+
+    res.json({ ratings, genres });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error:
+        "Une erreur est survenue lors de la récupération des métadonnées des films.",
     });
+  }
+});
+
+app.get("/api/films/search", async (req, res) => {
+  const { title, realisateurs } = req.query;
+  try {
+    let query = {};
+    if (title) {
+      query.titre = { $regex: title, $options: "i" };
+    }
+    if (realisateurs) {
+      query.realisateurs = { $regex: realisateurs, $options: "i" };
+    }
+    const films = await FilmModel.find(query);
     res.json(films);
   } catch (err) {
     console.error(err);
@@ -136,15 +154,10 @@ app.post("/api/user/like", async (req, res) => {
     }
 
     const filmIdToAdd = req.body.filmId;
-
-    // Check if the film is already liked by the user
     if (userData.likes.includes(filmIdToAdd)) {
       return res.json({ success: false, error: "Film already liked" });
     }
-
-    // Add the film to the likes array
     userData.likes.push(filmIdToAdd);
-
     try {
       await userData.save();
     } catch (error) {
@@ -178,13 +191,9 @@ app.post("/api/user/dislike", async (req, res) => {
     }
 
     const filmIdToRemove = req.body.filmId;
-
-    // Check if the film is already liked by the user
     if (!userData.likes.includes(filmIdToRemove)) {
       return res.json({ success: false, error: "Film not liked" });
     }
-
-    // Remove the film from the likes array
     userData.likes = userData.likes.filter((id) => id !== filmIdToRemove);
 
     try {
@@ -220,18 +229,13 @@ app.post("/api/user/watch", async (req, res) => {
     }
 
     const filmIdToAdd = req.body.filmId;
-
-    // Check if the film is already watched by the user
     if (userData.watchlist.includes(filmIdToAdd)) {
       return res.json({
         success: false,
         error: "Le Film est dans votre watchlist",
       });
     }
-
-    // Add the film to the watched array
     userData.watch.push(filmIdToAdd);
-
     try {
       await userData.save();
     } catch (error) {
@@ -265,13 +269,9 @@ app.post("/api/user/unwatch", async (req, res) => {
     }
 
     const filmIdToRemove = req.body.filmId;
-
-    // Check if the film is already watched by the user
     if (!userData.watch.includes(filmIdToRemove)) {
       return res.json({ success: false, error: "Film not watched" });
     }
-
-    // Remove the film from the watched array
     userData.watch = userData.watch.filter((id) => id !== filmIdToRemove);
 
     try {
@@ -307,8 +307,6 @@ app.post("/api/user/watchlist", async (req, res) => {
     }
 
     const filmIdToAdd = req.body.filmId;
-
-    // Check if the film is already in the watchlist
     if (userData.watchlist.includes(filmIdToAdd)) {
       return res.json({ success: false, error: "Film already in watchlist" });
     }
@@ -316,8 +314,6 @@ app.post("/api/user/watchlist", async (req, res) => {
     if (userData.watch.includes(filmIdToAdd)) {
       return res.json({ success: false, error: "Film already watched" });
     }
-
-    // Add the film to the watchlist array
     userData.watchlist.push(filmIdToAdd);
 
     try {
@@ -353,13 +349,9 @@ app.post("/api/user/unwatchlist", async (req, res) => {
     }
 
     const filmIdToRemove = req.body.filmId;
-
-    // Check if the film is already in the watchlist
     if (!userData.watchlist.includes(filmIdToRemove)) {
       return res.json({ success: false, error: "Film not in watchlist" });
     }
-
-    // Remove the film from the watchlist array
     userData.watchlist = userData.watchlist.filter(
       (id) => id !== filmIdToRemove
     );
