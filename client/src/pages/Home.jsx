@@ -8,115 +8,26 @@ function Home() {
   const [selectedFilmId, setSelectedFilmId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [movieSessions] = useState([]);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const filmsPerPage = 50;
-
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showInput, setShowInput] = useState(false);
-
-  const [ratings, setRatings] = useState([]);
   const [genres, setGenres] = useState([]);
-  const [selectedRating, setSelectedRating] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [filteredFilms, setFilteredFilms] = useState([]);
-
-  useEffect(() => {
-    axios
-      .get("http://localhost:3000/api/films/meta")
-      .then((response) => {
-        const { ratings, genres } = response.data;
-        setRatings(ratings);
-        setGenres(genres);
-      })
-      .catch((error) => {
-        console.error(
-          "Erreur lors de la récupération des métadonnées des films :",
-          error
-        );
-      });
-  }, []);
-
-  const handleRatingChange = (event) => {
-    setSelectedRating(event.target.value);
-  };
-
-  const handleGenreChange = (event) => {
-    setSelectedGenre(event.target.value);
-  };
-
-  useEffect(() => {
-    let filteredFilms = films;
-
-    if (selectedRating) {
-      filteredFilms = filteredFilms.filter(
-        (film) => film.rating === selectedRating
-      );
-    }
-
-    if (selectedGenre) {
-      filteredFilms = filteredFilms.filter(
-        (film) => film.genre === selectedGenre
-      );
-    }
-
-    setFilteredFilms(filteredFilms);
-  }, [films, selectedRating, selectedGenre]);
-
-  const handleImageClick = () => {
-    setShowInput(true);
-  };
-
-  useEffect(() => {
-    if (searchTerm.length >= 3) {
-      axios
-        .get(`http://localhost:3000/api/films/search?title=${searchTerm}`)
-        .then((response) => {
-          if (response.data.length > 0) {
-            setSearchResults(response.data);
-          } else {
-            axios
-              .get(
-                `http://localhost:3000/api/films/search?realisateurs=${searchTerm}`
-              )
-              .then((response) => {
-                setSearchResults(response.data);
-              })
-              .catch((error) => {
-                console.error(
-                  "Erreur lors de la recherche des films par réalisateur :",
-                  error
-                );
-              });
-          }
-        })
-        .catch((error) => {
-          console.error(
-            "Erreur lors de la recherche des films par titre :",
-            error
-          );
-        });
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchTerm]);
-
-  const handleSearchInputChange = (event) => {
-    setSearchTerm(event.target.value);
-    setCurrentPage(1);
-  };
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const filmsPerPage = 50;
   const indexOfLastFilm = currentPage * filmsPerPage;
   const indexOfFirstFilm = indexOfLastFilm - filmsPerPage;
+
   const currentFilms =
     searchTerm.length >= 3
       ? searchResults.slice(indexOfFirstFilm, indexOfLastFilm)
-      : films.slice(indexOfFirstFilm, indexOfLastFilm);
+      : filteredFilms.slice(indexOfFirstFilm, indexOfLastFilm);
+
+  const totalFilms =
+    searchTerm.length >= 3 ? searchResults.length : filteredFilms.length;
 
   const pageNumbers = [];
-  const totalFilms =
-    searchTerm.length >= 3 ? searchResults.length : films.length;
   for (let i = 1; i <= Math.ceil(totalFilms / filmsPerPage); i++) {
     pageNumbers.push(i);
   }
@@ -165,6 +76,87 @@ function Home() {
     }
   };
 
+  useEffect(() => {
+    fetch("http://localhost:3000/api/films")
+      .then((res) => res.json())
+      .then((data) => {
+        setFilms(data);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:3000/api/films/meta")
+      .then((response) => {
+        const { genres } = response.data;
+        setGenres(genres);
+      })
+      .catch((error) => {
+        console.error(
+          "Erreur lors de la récupération des métadonnées des films :",
+          error
+        );
+      });
+  }, []);
+
+  const handleGenreChange = (event) => {
+    setSelectedGenre(event.target.value);
+  };
+
+  useEffect(() => {
+    let filteredFilms = films;
+
+    if (selectedGenre) {
+      filteredFilms = filteredFilms.filter(
+        (film) => film.genre === selectedGenre
+      );
+    }
+
+    setFilteredFilms(filteredFilms);
+  }, [films, selectedGenre]);
+
+  const handleImageClick = () => {
+    setShowInput(true);
+  };
+
+  useEffect(() => {
+    if (searchTerm.length >= 3) {
+      axios
+        .get(`http://localhost:3000/api/films/search?title=${searchTerm}`)
+        .then((response) => {
+          if (response.data.length > 0) {
+            setSearchResults(response.data);
+          } else {
+            axios
+              .get(
+                `http://localhost:3000/api/films/search?realisateurs=${searchTerm}`
+              )
+              .then((response) => {
+                setSearchResults(response.data);
+              })
+              .catch((error) => {
+                console.error(
+                  "Erreur lors de la recherche des films par réalisateur :",
+                  error
+                );
+              });
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "Erreur lors de la recherche des films par titre :",
+            error
+          );
+        });
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchTerm]);
+
+  const handleSearchInputChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
   const getMovieSessions = async (filmTitle) => {
     try {
       const response = await axios.get(
@@ -202,15 +194,17 @@ function Home() {
     document.body.style.overflow = "";
   };
 
-  useEffect(() => {
-    fetch("http://localhost:3000/api/films")
-      .then((res) => res.json())
-      .then((data) => {
-        setFilms(data);
-      });
-  }, []);
+  const checkUserLoggedIn = () => {
+    const userLoggedIn = localStorage.getItem("token") !== null;
+    if (!userLoggedIn) {
+      navigate("/login");
+      return false;
+    }
+    return true;
+  };
 
   function likeFilm(filmId) {
+    if (!checkUserLoggedIn()) return;
     const token = localStorage.getItem("token");
 
     fetch("http://localhost:3000/api/user/like", {
@@ -226,12 +220,13 @@ function Home() {
         if (data.success) {
           alert("Film ajouté à vos favoris !");
         } else {
-          alert("Une erreur est survenue.");
+          alert("Le film est déjà dans votre liste favoris.");
         }
       });
   }
 
   function watchFilm(filmId) {
+    if (!checkUserLoggedIn()) return;
     const token = localStorage.getItem("token");
 
     fetch("http://localhost:3000/api/user/watch", {
@@ -247,12 +242,15 @@ function Home() {
         if (data.success) {
           alert("Film ajouté à votre liste de films déjà vu !");
         } else {
-          alert("Une erreur est survenue.");
+          alert(
+            "Le film est déjà dans votre liste de films déjà vu ou le film est encore dans votre liste de film à voir."
+          );
         }
       });
   }
 
   function watchlistFilm(filmId) {
+    if (!checkUserLoggedIn()) return;
     const token = localStorage.getItem("token");
 
     fetch("http://localhost:3000/api/user/watchlist", {
@@ -268,7 +266,9 @@ function Home() {
         if (data.success) {
           alert("Film ajouté à votre liste de films à voir !");
         } else {
-          alert("Le film est déjà dans votre liste de film vu.");
+          alert(
+            "Le film est déjà dans votre liste de film à voir ou le film est dans votre liste de film déjà vu."
+          );
         }
       });
   }
@@ -296,21 +296,19 @@ function Home() {
             value={searchTerm}
             onChange={handleSearchInputChange}
             placeholder="Rechercher un film..."
-            className="items-center w-1/5 p-3 text-black bg-white rounded h-1/6"
+            className="items-center justify-center w-1/5 p-3 text-black bg-white rounded h-1/6"
           />
         )}
-        <select value={selectedRating} onChange={handleRatingChange}>
-          <option value="">Toutes les notes</option>
-          {ratings.map((rating) => (
-            <option key={rating} value={rating}>
-              {rating}
-            </option>
-          ))}
-        </select>
-        <select value={selectedGenre} onChange={handleGenreChange}>
-          <option value="">Tous les genres</option>
+        <select
+          value={selectedGenre}
+          onChange={handleGenreChange}
+          className="w-1/12 text-white bg-transparent rounded h-1/6"
+        >
+          <option value="" className="text-black">
+            Tous les genres
+          </option>
           {genres.map((genre) => (
-            <option key={genre} value={genre}>
+            <option key={genre} value={genre} className="w-1/5 text-black">
               {genre}
             </option>
           ))}
@@ -329,20 +327,21 @@ function Home() {
       </div>
 
       <div className="flex flex-wrap justify-center w-full gap-5 mt-5 align-center">
-        {filteredFilms.map((film) => (
+        {currentFilms.map((film) => (
           <div
             className="w-1/3 h-full p-1 text-center rounded md:w-1/4 lg:w-1/5 xl:w-1/6"
             key={film._id}
-            onClick={() => openFilmModal(film._id)}
           >
-            <img
-              src={
-                film.posterPath
-                  ? `https://image.tmdb.org/t/p/w500${film.posterPath}`
-                  : "src/images/endgame.jpg"
-              }
-              alt={film.titre}
-            />{" "}
+            <div onClick={() => openFilmModal(film._id)}>
+              <img
+                src={
+                  film.posterPath
+                    ? `https://image.tmdb.org/t/p/w500${film.posterPath}`
+                    : "src/images/endgame.jpg"
+                }
+                alt={film.titre}
+              />{" "}
+            </div>
             <div className="flex flex-row justify-center gap-1 mt-2">
               <img
                 src="src/images/love.webp"
