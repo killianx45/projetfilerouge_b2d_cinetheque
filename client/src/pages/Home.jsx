@@ -34,14 +34,17 @@ function Home() {
 
   const renderPaginationButton = (number) => (
     <li key={number}>
-      <button onClick={() => setCurrentPage(number)} className="text-white">
+      <button
+        onClick={() => setCurrentPage(number)}
+        className="px-3 py-1 font-extrabold text-white rounded bg-slate-900 hover:bg-slate-700"
+      >
         {number}
       </button>
     </li>
   );
 
   const renderEllipsis = (key) => (
-    <span key={key} className="px-3 text-white">
+    <span key={key} className="px-1 font-extrabold text-white">
       ...
     </span>
   );
@@ -275,44 +278,45 @@ function Home() {
 
   return (
     <div className={`bg-slate-900 ${modalOpen ? "overflow-hidden" : ""}`}>
-      <div className="flex items-center justify-end p-5">
-        <img
-          src="src/images/loginuser1.webp"
-          alt="logo"
-          className="p-5 w-1/7"
-          onClick={() => navigate("/dashboard")}
-        />
-        {!showInput && (
+      <div className="flex items-center justify-between p-5">
+        <div className="flex items-center justify-start">
           <img
-            src="src/images/loupe1.webp"
+            src="src/images/loginuser1.webp"
             alt="logo"
-            className="p-5 cursor-pointer w-1/7"
-            onClick={handleImageClick}
+            className="w-12 p-1 cursor-pointer md:w-16"
+            onClick={() => navigate("/dashboard")}
           />
-        )}
-        {showInput && (
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={handleSearchInputChange}
-            placeholder="Rechercher un film..."
-            className="items-center justify-center w-1/5 p-3 text-black bg-white rounded h-1/6"
-          />
-        )}
-        <select
-          value={selectedGenre}
-          onChange={handleGenreChange}
-          className="w-1/12 text-white bg-transparent rounded h-1/6"
-        >
-          <option value="" className="text-black">
-            Tous les genres
-          </option>
-          {genres.map((genre) => (
-            <option key={genre} value={genre} className="w-1/5 text-black">
-              {genre}
-            </option>
-          ))}
-        </select>
+          {!showInput && (
+            <img
+              src="src/images/loupe2.webp"
+              alt="logo"
+              className="w-12 p-1 cursor-pointer md:w-16"
+              onClick={handleImageClick}
+            />
+          )}
+          {showInput && (
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearchInputChange}
+              placeholder="Rechercher un film..."
+              className="items-center justify-center p-3 text-black bg-white rounded w-52 h-1/6 md:w-96"
+            />
+          )}
+        </div>
+        <div className="flex items-center justify-end w-24">
+          <select
+            value={selectedGenre}
+            onChange={handleGenreChange}
+            className="w-24 text-white bg-transparent rounded"
+          >
+            {genres.map((genre) => (
+              <option key={genre} value={genre} className="text-black">
+                {genre}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <h1 className="mt-2 mb-16 font-extrabold text-center text-white uppercase md:text-4xl">
         La Cinémathèque Française
@@ -347,19 +351,19 @@ function Home() {
                 src="src/images/love.webp"
                 alt="icone love film"
                 onClick={() => likeFilm(film._id)}
-                className="w-4 h-4 cursor-pointer"
+                className="w-4 h-4 cursor-pointer md:w-6 md:h-6"
               />
               <img
                 src="src/images/watch.webp"
                 alt="icone eye film"
                 onClick={() => watchFilm(film._id)}
-                className="w-4 h-4 cursor-pointer"
+                className="w-4 h-4 cursor-pointer md:w-6 md:h-6"
               />
               <img
                 src="src/images/towatch.webp"
                 alt="icone watchlist film"
                 onClick={() => watchlistFilm(film._id)}
-                className="w-4 h-4 cursor-pointer"
+                className="w-4 h-4 cursor-pointer md:w-6 md:h-6"
               />
             </div>
           </div>
@@ -389,10 +393,11 @@ function Home() {
                   height="175px"
                   allowFullScreen
                   autoPlay
+                  className="md:h-72"
                 ></iframe>
               </div>
               <div className="flex flex-col w-full gap-2 mt-3 ml-3">
-                <div className="flex flex-col items-center w-4/6 gap-2">
+                <div className="flex flex-col items-center w-4/6 gap-2 md:w-11/12 md:flex-row md:pl-3">
                   <h3 className="text-white">
                     Réalisateurs :{" "}
                     {
@@ -400,13 +405,13 @@ function Home() {
                         .realisateurs
                     }
                   </h3>
-                  <p className="text-white">
+                  <p className="text-white md:pl-3">
                     Genre :{" "}
                     {films.find((film) => film._id === selectedFilmId).genre}
                   </p>
                 </div>
-                <div className="flex flex-col w-4/5 gap-2 mt-3">
-                  <div className="flex flex-row gap-2">
+                <div className="flex flex-col w-4/5 gap-2 mt-3 md:pl-3">
+                  <div className="flex flex-row gap-2 md:gap-5 md:mb-3">
                     <p className="text-white">
                       {films.find((film) => film._id === selectedFilmId).duree}
                     </p>
@@ -423,7 +428,7 @@ function Home() {
                       }
                     </p>
                   </div>
-                  <h2 className="font-extrabold text-white uppercase">
+                  <h2 className="font-extrabold text-white uppercase md:mb-3">
                     {films.find((film) => film._id === selectedFilmId).titre}
                   </h2>
                   <p className="w-full text-justify text-white">
